@@ -51,6 +51,16 @@ const ImageEditor: React.FC = () => {
             setIsLoading(false);
         }
     }, [prompt, imageFile]);
+    
+    const handleDownload = () => {
+        if (!editedImageUrl) return;
+        const link = document.createElement('a');
+        link.href = editedImageUrl;
+        link.download = `edited-image-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     return (
         <div className="space-y-6">
@@ -101,6 +111,17 @@ const ImageEditor: React.FC = () => {
                         <h3 className="text-lg font-semibold mb-2 text-center text-gray-300">Edited</h3>
                         <img src={editedImageUrl} alt="Edited result" className="rounded-md mx-auto max-h-96" />
                         {responseText && <p className="text-gray-400 mt-4 text-sm italic">{responseText}</p>}
+                        <div className="text-center mt-4">
+                            <button
+                                onClick={handleDownload}
+                                className="bg-indigo-500 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-600 transition-colors duration-300 inline-flex items-center gap-2"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                                Download Edited Image
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
