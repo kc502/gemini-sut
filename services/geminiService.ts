@@ -3,50 +3,35 @@ import { GoogleGenAI, Modality, GenerateContentResponse, GenerateVideosOperation
 let ai: GoogleGenAI | null = null;
 let currentApiKey: string | null = null;
 
-export const initializeGoogleGenAI = (apiKey: string) => {
-    if (!apiKey) {
-        throw new Error("API key is required for initialization.");
-    }
+export const initializeGemini = (apiKey: string) => {
     ai = new GoogleGenAI({ apiKey });
     currentApiKey = apiKey;
 };
 
-export const validateApiKey = async (apiKey: string): Promise<boolean> => {
-    if (!apiKey) {
-        return false;
-    }
-    try {
-        const tempAi = new GoogleGenAI({ apiKey });
-        // Make a lightweight, non-streaming call to check for authentication errors.
-        await tempAi.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: 'hello',
-        });
-        return true;
-    } catch (error) {
-        console.error("API Key validation failed:", error);
-        return false;
-    }
-};
-
-
-const getGoogleGenAI = (): GoogleGenAI => {
+const getAiInstance = (): GoogleGenAI => {
     if (!ai) {
-        throw new Error("Gemini AI Service not initialized. Please set your API key.");
+        throw new Error("Gemini AI service not initialized. Please set a valid API key.");
     }
     return ai;
 };
 
-const getApiKey = (): string => {
-    if (!currentApiKey) {
-        throw new Error("API Key not available. Please set your API key.");
+export const validateApiKey = async (apiKey: string): Promise<boolean> => {
+    if (!apiKey) return false;
+    try {
+        const tempAi = new GoogleGenAI({ apiKey });
+        // Make a lightweight, non-streaming call to check for authentication errors.
+        await tempAi.models.generateContent({ model: 'gemini-2.5-flash', contents: 'Hi' });
+        return true;
+    } catch (error: any) {
+        // Any error during this test is considered a validation failure.
+        console.error("API Key validation failed:", error.message);
+        return false;
     }
-    return currentApiKey;
 };
 
 
 export const generateVideo = async (prompt: string, model: string, aspectRatio: string, resolution: string, image?: {mimeType: string; data: string}): Promise<GenerateVideosOperation> => {
-    const aiInstance = getGoogleGenAI();
+    const aiInstance = getAiInstance();
     const imagePart = image ? { imageBytes: image.data, mimeType: image.mimeType } : undefined;
 
     return await aiInstance.models.generateVideos({
@@ -62,13 +47,15 @@ export const generateVideo = async (prompt: string, model: string, aspectRatio: 
 };
 
 export const checkVideoOperationStatus = async (operation: GenerateVideosOperation): Promise<GenerateVideosOperation> => {
-    const aiInstance = getGoogleGenAI();
+    const aiInstance = getAiInstance();
     return await aiInstance.operations.getVideosOperation({ operation });
 };
 
 export const fetchVideoFromUri = async (uri: string): Promise<Blob> => {
-    const apiKey = getApiKey();
-    const response = await fetch(`${uri}&key=${apiKey}`);
+    if (!currentApiKey) {
+        throw new Error("API Key is not available for fetching video.");
+    }
+    const response = await fetch(`${uri}&key=${currentApiKey}`);
     if (!response.ok) {
         throw new Error(`Failed to fetch video: ${response.statusText}`);
     }
@@ -77,7 +64,7 @@ export const fetchVideoFromUri = async (uri: string): Promise<Blob> => {
 
 
 export const generateImage = async (prompt: string, aspectRatio: string): Promise<string> => {
-    const aiInstance = getGoogleGenAI();
+    const aiInstance = getAiInstance();
     const response = await aiInstance.models.generateImages({
         model: 'imagen-4.0-generate-001',
         prompt,
@@ -93,7 +80,7 @@ export const generateImage = async (prompt: string, aspectRatio: string): Promis
 };
 
 export const editImage = async (prompt: string, image: {mimeType: string, data: string}): Promise<{ text: string, imageUrl: string | null }> => {
-    const aiInstance = getGoogleGenAI();
+    const aiInstance = getAiInstance();
     const response: GenerateContentResponse = await aiInstance.models.generateContent({
         model: 'gemini-2.5-flash-image-preview',
         contents: {
