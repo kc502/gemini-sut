@@ -5,7 +5,7 @@ import VideoGenerator from './components/VideoGenerator';
 import ImageGenerator from './components/ImageGenerator';
 import ImageEditor from './components/ImageEditor';
 import TabButton from './components/TabButton';
-import ApiKeyManager from './components/ApiKeyManager';
+import ApiKeyModal from './components/ApiKeyModal';
 import { initializeGemini } from './services/geminiService';
 
 const App: React.FC = () => {
@@ -13,31 +13,41 @@ const App: React.FC = () => {
     // Check for key in local storage on initial load
     return localStorage.getItem('geminiApiKey');
   });
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.VIDEO_GENERATION);
 
   useEffect(() => {
     if (apiKey) {
       try {
         initializeGemini(apiKey);
+        setIsApiKeyModalOpen(false); // Close modal on successful initialization
       } catch (error) {
         console.error("Failed to initialize Gemini with stored API key:", error);
-        // Clear invalid key
+        // Clear invalid key and re-open modal
         localStorage.removeItem('geminiApiKey');
         setApiKey(null);
+        setIsApiKeyModalOpen(true);
       }
+    } else {
+      // If no API key, open the modal
+      setIsApiKeyModalOpen(true);
     }
   }, [apiKey]);
 
   const handleSetApiKey = (key: string) => {
     localStorage.setItem('geminiApiKey', key);
     setApiKey(key);
-    // Initialization is handled by the useEffect hook
   };
 
-  const handleChangeApiKey = () => {
-    localStorage.removeItem('geminiApiKey');
-    setApiKey(null);
-    // This will cause the ApiKeyManager to be rendered
+  const handleManageApiKeyClick = () => {
+    setIsApiKeyModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    // Only allow closing the modal if an API key is already set.
+    if (apiKey) {
+      setIsApiKeyModalOpen(false);
+    }
   };
 
   const renderContent = () => {
@@ -53,20 +63,18 @@ const App: React.FC = () => {
     }
   };
 
-  if (!apiKey) {
-    return (
-      <div className="min-h-screen bg-gray-900 text-gray-100 font-sans flex items-center justify-center p-4">
-        <main>
-          <ApiKeyManager onSetApiKey={handleSetApiKey} />
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
-      <Header />
-      <main className="container mx-auto px-4 py-8">
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onSetApiKey={handleSetApiKey}
+        onClose={handleCloseModal}
+        showCloseButton={!!apiKey}
+      />
+
+      <Header onManageApiKeyClick={handleManageApiKeyClick} />
+      
+      <main className={`container mx-auto px-4 py-8 transition-filter duration-300 ${isApiKeyModalOpen ? 'blur-sm pointer-events-none' : ''}`}>
         <div className="bg-gray-800 rounded-xl shadow-2xl p-6 md:p-8">
           <div className="flex justify-center border-b border-gray-700 mb-6">
             <TabButton
@@ -90,15 +98,9 @@ const App: React.FC = () => {
           </div>
         </div>
       </main>
-      <footer className="text-center py-6 text-gray-500 text-sm">
+      
+      <footer className={`text-center py-6 text-gray-500 text-sm transition-filter duration-300 ${isApiKeyModalOpen ? 'blur-sm' : ''}`}>
         <p>Powered by Google Gemini API</p>
-        <button
-          onClick={handleChangeApiKey}
-          className="mt-2 text-indigo-400 hover:text-indigo-300 hover:underline focus:outline-none"
-          aria-label="Change API Key"
-        >
-          Change API Key
-        </button>
       </footer>
     </div>
   );

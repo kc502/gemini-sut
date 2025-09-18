@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { generateVideo, checkVideoOperationStatus, fetchVideoFromUri } from '../services/geminiService';
+// FIX: Use the GenerateVideosOperation type from the local geminiService proxy to match the types returned by the service functions.
+import { generateVideo, checkVideoOperationStatus, fetchVideoFromUri, type GenerateVideosOperation } from '../services/geminiService';
 import { fileToBase64 } from '../utils/fileUtils';
 import LoadingSpinner from './LoadingSpinner';
-import type { GenerateVideosOperation } from '@google/genai';
 
 const loadingMessages = [
     "Warming up the digital director's chair...",
