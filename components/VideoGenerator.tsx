@@ -12,9 +12,9 @@ const loadingMessages = [
 ];
 
 const videoModels = [
+    { id: 'veo-3.0-generate-001-fast', name: 'Veo 3 (Fast)' },
+    { id: 'veo-3.0-generate-001', name: 'Veo 3' },
     { id: 'veo-2.0-generate-001', name: 'Veo 2' },
-    { id: 'veo-3-preview', name: 'Veo 3 Preview' },
-    { id: 'veo-3-fast-preview', name: 'Veo 3 Fast Preview' },
 ];
 
 const resolutions = ["1080p", "720p"];
@@ -97,7 +97,20 @@ const VideoGenerator: React.FC = () => {
             }
         } catch (err: any) {
             console.error(err);
-            setError(err.message || 'An unexpected error occurred during video generation.');
+            const errorMessage = typeof err === 'object' && err !== null && 'message' in err ? String(err.message) : 'An unexpected error occurred during video generation.';
+            
+            // Attempt to parse a JSON error message if it's a string
+            if (typeof err.message === 'string' && err.message.startsWith('{')) {
+                try {
+                    const parsedError = JSON.parse(err.message);
+                    setError(`Error: ${parsedError.error.message} (Code: ${parsedError.error.code}, Status: ${parsedError.error.status})`);
+                } catch (parseError) {
+                    setError(errorMessage);
+                }
+            } else {
+                setError(errorMessage);
+            }
+
         } finally {
             setIsLoading(false);
         }
