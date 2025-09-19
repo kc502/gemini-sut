@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { validateApiKey } from '../services/geminiService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type ValidationStatus = 'idle' | 'loading' | 'valid' | 'invalid';
 
@@ -12,6 +13,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onSetApiKey }) => {
   const [status, setStatus] = useState<ValidationStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (debounceTimeout.current) {
@@ -39,7 +41,9 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onSetApiKey }) => {
         }, 500); // Brief pause to show success state
       } else {
         setStatus('invalid');
-        setError(result.message || 'Invalid API Key. Please check the key and try again.');
+        // @ts-ignore
+        const errorMessage = result.message ? t.errors[result.message.split('.')[1]] : t.errors.invalidApiKeyDefault;
+        setError(errorMessage);
       }
     }, 700); // Debounce validation by 700ms
 
@@ -48,7 +52,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onSetApiKey }) => {
         clearTimeout(debounceTimeout.current);
       }
     };
-  }, [key, onSetApiKey]);
+  }, [key, onSetApiKey, t]);
 
   const borderColor = () => {
     switch (status) {
@@ -86,16 +90,16 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onSetApiKey }) => {
 
   return (
     <div className="bg-gray-800 rounded-xl shadow-2xl p-6 md:p-8 text-center">
-      <h2 className="text-2xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-600">Enter Your Gemini API Key</h2>
+      <h2 className="text-2xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-600">{t.apiKeyManager.title}</h2>
       <p className="text-gray-400 mb-6">
-        To use this application, please provide your Google Gemini API key. We'll validate it to ensure it's active.
+        {t.apiKeyManager.description}
       </p>
       <div className="relative max-w-lg mx-auto">
         <input
           type="password"
           value={key}
           onChange={(e) => setKey(e.target.value)}
-          placeholder="Paste your API key here to begin"
+          placeholder={t.apiKeyManager.placeholder}
           className={`w-full bg-gray-700 border ${borderColor()} rounded-md p-3 pr-10 text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors`}
           aria-label="Gemini API Key Input"
           autoFocus
@@ -106,7 +110,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onSetApiKey }) => {
       </div>
       {status === 'invalid' && error && <p className="text-red-400 text-sm mt-2">{error}</p>}
        <p className="text-xs text-gray-500 mt-4">
-        You can get your API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">Google AI Studio</a>.
+        {t.apiKeyManager.getApiKeyText.part1} <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">Google AI Studio</a>{t.apiKeyManager.getApiKeyText.part2}
       </p>
     </div>
   );

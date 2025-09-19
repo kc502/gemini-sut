@@ -7,10 +7,12 @@ import ImageEditor from './components/ImageEditor';
 import TabButton from './components/TabButton';
 import ApiKeyManager from './components/ApiKeyManager';
 import { initializeGemini } from './services/geminiService';
+import { useLanguage } from './contexts/LanguageContext';
 
 const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>(Tab.IMAGE_GENERATION);
+  const { t } = useLanguage();
 
   const handleSetApiKey = (key: string) => {
     try {
@@ -46,17 +48,17 @@ const App: React.FC = () => {
                   
                   <div className="flex justify-center border-b border-gray-700 mb-6">
                     <TabButton
-                      label="ပုံ ဖန်တီးရန်"
+                      label={t.tabs.imageGeneration}
                       isActive={activeTab === Tab.IMAGE_GENERATION}
                       onClick={() => setActiveTab(Tab.IMAGE_GENERATION)}
                     />
                     <TabButton
-                      label="ပုံ ပြင်ဆင်ရန်"
+                      label={t.tabs.imageEditing}
                       isActive={activeTab === Tab.IMAGE_EDITING}
                       onClick={() => setActiveTab(Tab.IMAGE_EDITING)}
                     />
                     <TabButton
-                      label="ဗီဒီယို ဖန်တီးရန်"
+                      label={t.tabs.videoGeneration}
                       isActive={activeTab === Tab.VIDEO_GENERATION}
                       onClick={() => setActiveTab(Tab.VIDEO_GENERATION)}
                     />

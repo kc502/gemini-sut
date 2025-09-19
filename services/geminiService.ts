@@ -46,7 +46,9 @@ export interface GenerateVideosOperation {
  */
 export const generateVideo = async (
     prompt: string, 
-    model: string, 
+    model: string,
+    aspectRatio: string,
+    negativePrompt: string,
     image?: {mimeType: string; data: string},
     video?: {mimeType: string; data: string}
 ): Promise<GenerateVideosOperation> => {
@@ -65,9 +67,17 @@ export const generateVideo = async (
             mimeType: video.mimeType,
         };
     }
-    request.config = {
+    
+    const config: any = {
         numberOfVideos: 1,
+        aspectRatio: aspectRatio as "16:9" | "9:16",
     };
+
+    if (negativePrompt) {
+        config.negativePrompt = negativePrompt;
+    }
+
+    request.config = config;
 
     const operation: any = await aiInstance.models.generateVideos(request);
     return operation as GenerateVideosOperation;
@@ -168,7 +178,7 @@ export const editImage = async (prompt: string, image: { mimeType: string; data:
 /**
  * Validates an API key by making a lightweight test call to the Gemini API.
  * @param key The API key to validate.
- * @returns An object with a boolean `isValid` and an optional error `message`.
+ * @returns An object with a boolean `isValid` and an optional error `message` (as a translation key).
  */
 export const validateApiKey = async (key: string): Promise<{ isValid: boolean; message?: string }> => {
     if (!key || key.trim().length === 0) {
@@ -189,11 +199,11 @@ export const validateApiKey = async (key: string): Promise<{ isValid: boolean; m
     } catch (error: any) {
         console.error("API Key Validation Error:", error);
         if (error.message && (error.message.includes('API key not valid') || error.message.includes('invalid'))) {
-            return { isValid: false, message: 'The provided API key is not valid. Please check and try again.' };
+            return { isValid: false, message: 'errors.invalidApiKey' };
         }
         if (error.message && error.message.includes('permission denied')) {
-            return { isValid: false, message: 'Permission denied. Please ensure your API key is enabled for the Gemini API.' };
+            return { isValid: false, message: 'errors.permissionDenied' };
         }
-        return { isValid: false, message: 'Could not validate the API key. Please check your network connection.' };
+        return { isValid: false, message: 'errors.validationNetwork' };
     }
 };
