@@ -33,6 +33,7 @@ export default async function handler(req: Request) {
         const config: any = {
             numberOfVideos: 1,
             aspectRatio: aspectRatio,
+            generateAudio: true, // Ensure audio is always generated for videos
         };
         if (negativePrompt) {
             config.negativePrompt = negativePrompt;

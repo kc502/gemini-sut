@@ -77,6 +77,7 @@ export const generateVideo = async (
     const config: any = {
         numberOfVideos: 1,
         aspectRatio: aspectRatio,
+        generateAudio: true,
     };
     if (negativePrompt) {
         config.negativePrompt = negativePrompt;
