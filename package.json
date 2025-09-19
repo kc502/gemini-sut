@@ -6,7 +6,7 @@
   "description": "An application to generate images and videos using Google's Gemini API, with a Burmese interface.",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npx vite build",
     "preview": "vite preview",
     "start": "serve dist"
   },
