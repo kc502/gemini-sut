@@ -10,13 +10,16 @@ export default async function handler(req: Request) {
     }
 
     try {
-        const { apiKey, prompt, aspectRatio } = await req.json();
+        // Fix: API key is no longer passed from the client.
+        const { prompt, aspectRatio } = await req.json();
 
-        if (!apiKey || !prompt || !aspectRatio) {
-            return new Response(JSON.stringify({ message: 'Missing required parameters: apiKey, prompt, or aspectRatio.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        if (!prompt || !aspectRatio) {
+            // Fix: Updated error message for missing parameters.
+            return new Response(JSON.stringify({ message: 'Missing required parameters: prompt or aspectRatio.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
         
-        const aiInstance = getAiInstance(apiKey);
+        // Fix: Get AI instance configured securely on the server.
+        const aiInstance = getAiInstance();
 
         const response = await aiInstance.models.generateImages({
             model: 'imagen-4.0-generate-001',

@@ -11,13 +11,16 @@ export default async function handler(req: Request) {
     }
 
     try {
-        const { apiKey, operation } = await req.json();
+        // Fix: API key is no longer passed from the client.
+        const { operation } = await req.json();
 
-        if (!apiKey || !operation) {
-            return new Response(JSON.stringify({ message: 'Missing apiKey or operation data.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        if (!operation) {
+            // Fix: Updated error message for missing operation data.
+            return new Response(JSON.stringify({ message: 'Missing operation data.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
         
-        const aiInstance = getAiInstance(apiKey);
+        // Fix: Get AI instance configured securely on the server.
+        const aiInstance = getAiInstance();
         const result = await aiInstance.operations.getVideosOperation({ operation }) as GenerateVideosOperation;
         
         return new Response(JSON.stringify(result), {

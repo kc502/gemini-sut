@@ -1,12 +1,17 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { editImage } from '../services/geminiService';
 import { blobToParts } from '../utils/fileUtils';
-import LoadingSpinner from './LoadingSpinner';
+import LoadingSpinner from '../contexts/LoadingSpinner';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useApiKey } from '../contexts/ApiKeyContext';
 import { getFriendlyErrorMessage } from '../utils/errorUtils';
+import { useApiKey } from '../contexts/ApiKeyContext';
 
-const ImageEditor: React.FC = () => {
+interface ImageEditorProps {
+  imageForEditing: string | null;
+  setImageForEditing: (imageUrl: string | null) => void;
+}
+
+const ImageEditor: React.FC<ImageEditorProps> = ({ imageForEditing, setImageForEditing }) => {
     const { t } = useLanguage();
     const { apiKey } = useApiKey();
 
@@ -17,6 +22,25 @@ const ImageEditor: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [editedImageUrl, setEditedImageUrl] = useState<string | null>(null);
     const [responseText, setResponseText] = useState<string>('');
+
+    useEffect(() => {
+        if (imageForEditing) {
+            // Convert data URL to File object
+            fetch(imageForEditing)
+                .then(res => res.blob())
+                .then(blob => {
+                    const file = new File([blob], `generated-image-${Date.now()}.jpg`, { type: blob.type });
+                    setImageFile(file);
+                    setOriginalImageUrl(imageForEditing);
+                    // Clear the shared state after using it
+                    setImageForEditing(null);
+                })
+                .catch(err => {
+                    console.error("Error converting data URL to file:", err);
+                    setError("Failed to load image for editing.");
+                });
+        }
+    }, [imageForEditing, setImageForEditing]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -29,12 +53,12 @@ const ImageEditor: React.FC = () => {
     };
 
     const handleSubmit = useCallback(async () => {
-        if (!apiKey) {
-            setError("API Key is missing.");
-            return;
-        }
         if (!prompt || !imageFile) {
             setError(t.imageEditor.errorPromptAndImageRequired);
+            return;
+        }
+        if (!apiKey) {
+            setError("API Key is not set.");
             return;
         }
 
@@ -59,7 +83,7 @@ const ImageEditor: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [apiKey, prompt, imageFile, t]);
+    }, [prompt, imageFile, t, apiKey]);
     
     const handleDownload = () => {
         if (!editedImageUrl) return;

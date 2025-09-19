@@ -5,11 +5,12 @@ import { GoogleGenAI } from "@google/genai";
 
 /**
  * Creates a Gemini AI instance for a single request.
- * @param apiKey The API key for this request.
+ * It securely retrieves the API key from the server's environment variables.
  */
-export const getAiInstance = (apiKey: string): GoogleGenAI => {
+export const getAiInstance = (): GoogleGenAI => {
+    const apiKey = process.env.API_KEY;
     if (!apiKey) {
-        throw new Error("API key is missing.");
+        throw new Error("API key is not configured on the server.");
     }
     return new GoogleGenAI({ apiKey });
 };

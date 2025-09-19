@@ -11,13 +11,16 @@ export default async function handler(req: Request) {
     }
 
     try {
-        const { apiKey, prompt, model, aspectRatio, negativePrompt, image, video } = await req.json();
+        // Fix: API key is no longer passed from the client.
+        const { prompt, model, aspectRatio, negativePrompt, image, video } = await req.json();
 
-        if (!apiKey || !prompt || !model) {
-            return new Response(JSON.stringify({ message: 'Missing required parameters.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+        if (!prompt || !model) {
+            // Fix: Updated error message for missing parameters.
+            return new Response(JSON.stringify({ message: 'Missing required parameters: prompt or model.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
         
-        const aiInstance = getAiInstance(apiKey);
+        // Fix: Get AI instance configured securely on the server.
+        const aiInstance = getAiInstance();
         
         const request: any = { model, prompt };
         if (image) {

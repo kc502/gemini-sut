@@ -8,10 +8,12 @@ export default async function handler(req: Request) {
     }
     
     try {
-        const { apiKey, uri } = await req.json();
+        // Fix: API key is no longer passed from the client. It's retrieved from server environment variables.
+        const { uri } = await req.json();
+        const apiKey = process.env.API_KEY;
 
         if (!apiKey || !uri) {
-            return new Response(JSON.stringify({ message: 'Missing apiKey or uri.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+            return new Response(JSON.stringify({ message: 'Missing uri in request or API key on server.' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
 
         const videoUrl = `${uri}&key=${apiKey}`;

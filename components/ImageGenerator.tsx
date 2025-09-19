@@ -1,41 +1,43 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { generateImage } from '../services/geminiService';
-import LoadingSpinner from './LoadingSpinner';
+import LoadingSpinner from '../contexts/LoadingSpinner';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useApiKey } from '../contexts/ApiKeyContext';
 import { getFriendlyErrorMessage } from '../utils/errorUtils';
+import { useApiKey } from '../contexts/ApiKeyContext';
+import CustomDropdown from './CustomDropdown';
+import { Tab } from '../types';
 
-const aspectRatios = ["16:9", "9:16"];
+interface ImageGeneratorProps {
+  setActiveTab: (tab: Tab) => void;
+  setImageForEditing: (imageUrl: string | null) => void;
+}
 
-const ImageGenerator: React.FC = () => {
+const ImageGenerator: React.FC<ImageGeneratorProps> = ({ setActiveTab, setImageForEditing }) => {
     const { t } = useLanguage();
     const { apiKey } = useApiKey();
 
     const [prompt, setPrompt] = useState('');
-    const [aspectRatio, setAspectRatio] = useState("16:9");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
     const promptRef = useRef<HTMLTextAreaElement>(null);
 
-    const getAspectRatioLabel = (ar: string): string => {
-        switch(ar) {
-            case "16:9":
-                return t.common.aspectRatioLandscape;
-            case "9:16":
-                return t.common.aspectRatioPortrait;
-            default:
-                return ar;
-        }
-    }
+    const aspectRatioOptions = [
+        { value: "16:9", labelKey: 'aspectRatioLandscape' as keyof typeof t.common },
+        { value: "9:16", labelKey: 'aspectRatioPortrait' as keyof typeof t.common },
+    ];
+    
+    const dropdownOptions = aspectRatioOptions.map(opt => `${t.common[opt.labelKey]} (${opt.value})`);
+    
+    const [selectedAspectRatioOption, setSelectedAspectRatioOption] = useState(dropdownOptions[0]);
 
     const handleSubmit = useCallback(async () => {
-        if (!apiKey) {
-            setError("API Key is missing."); // Should not happen if UI is correct
-            return;
-        }
         if (!prompt) {
             setError(t.common.errorPromptRequired);
+            return;
+        }
+        if (!apiKey) {
+            setError("API Key is not set.");
             return;
         }
 
@@ -44,7 +46,8 @@ const ImageGenerator: React.FC = () => {
         setGeneratedImageUrl(null);
 
         try {
-            const imageUrl = await generateImage(apiKey, prompt, aspectRatio);
+            const aspectRatioValue = selectedAspectRatioOption.match(/\(([^)]+)\)/)?.[1] || aspectRatioOptions[0].value;
+            const imageUrl = await generateImage(apiKey, prompt, aspectRatioValue);
             setGeneratedImageUrl(imageUrl);
         } catch (err: any) {
             console.error(err);
@@ -52,7 +55,7 @@ const ImageGenerator: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [apiKey, prompt, aspectRatio, t]);
+    }, [prompt, selectedAspectRatioOption, t, apiKey]);
 
     const handleDownload = () => {
         if (!generatedImageUrl) return;
@@ -64,8 +67,11 @@ const ImageGenerator: React.FC = () => {
         document.body.removeChild(link);
     };
 
-    const handleEditPrompt = () => {
-        promptRef.current?.focus();
+    const handleEditImage = () => {
+        if (generatedImageUrl) {
+            setImageForEditing(generatedImageUrl);
+            setActiveTab(Tab.IMAGE_EDITING);
+        }
     };
 
     return (
@@ -83,20 +89,12 @@ const ImageGenerator: React.FC = () => {
                 />
             </div>
 
-            <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">{t.common.aspectRatioLabel}</label>
-                <div className="flex space-x-2 flex-wrap gap-2">
-                    {aspectRatios.map(ar => (
-                        <button
-                            key={ar}
-                            onClick={() => setAspectRatio(ar)}
-                            className={`px-4 py-2 rounded-md transition-colors duration-200 text-sm font-medium ${aspectRatio === ar ? 'bg-indigo-600 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
-                        >
-                            {`${getAspectRatioLabel(ar)} (${ar})`}
-                        </button>
-                    ))}
-                </div>
-            </div>
+            <CustomDropdown
+                label={t.common.aspectRatioLabel}
+                options={dropdownOptions}
+                value={selectedAspectRatioOption}
+                onChange={setSelectedAspectRatioOption}
+            />
 
             <button
                 onClick={handleSubmit}
@@ -118,7 +116,7 @@ const ImageGenerator: React.FC = () => {
                     </div>
                     <div className="flex justify-center items-center gap-4 mt-4">
                         <button
-                            onClick={handleEditPrompt}
+                            onClick={handleEditImage}
                             className="bg-gray-600 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-500 transition-colors duration-300 inline-flex items-center gap-2"
                         >
                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

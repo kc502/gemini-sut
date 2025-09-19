@@ -35,7 +35,7 @@ export const translations = {
       generatingButton: "ပုံ ဖန်တီးနေသည်...",
       loadingMessage: "သင်၏ ပုံကို ဖန်တီးနေသည်...",
       generatedImageTitle: "ဖန်တီးပြီး ပုံ",
-      editPromptButton: "Prompt ကို ပြန်ပြင်မည်",
+      editPromptButton: "ပုံကို ပြင်မည်",
       downloadButton: "ပုံကို Download ရယူမည်",
     },
     imageEditor: {
@@ -120,7 +120,7 @@ export const translations = {
       generatingButton: "Generating Image...",
       loadingMessage: "Generating your image...",
       generatedImageTitle: "Generated Image",
-      editPromptButton: "Edit Prompt",
+      editPromptButton: "Edit Image",
       downloadButton: "Download Image",
     },
     imageEditor: {

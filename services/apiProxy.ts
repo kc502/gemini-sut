@@ -36,7 +36,6 @@ async function apiPost<T>(endpoint: string, body: object): Promise<T> {
  * PROXY (Client-Side): Requests video generation via the backend.
  */
 export const proxyGenerateVideo = async (
-    apiKey: string,
     prompt: string, 
     model: string,
     aspectRatio: string,
@@ -45,45 +44,35 @@ export const proxyGenerateVideo = async (
     video?: {mimeType: string; data: string}
 ): Promise<GenerateVideosOperation> => {
     return apiPost<GenerateVideosOperation>('/api/generate-video', {
-        apiKey, prompt, model, aspectRatio, negativePrompt, image, video
+        prompt, model, aspectRatio, negativePrompt, image, video
     });
 };
 
 /**
  * PROXY (Client-Side): Checks video operation status via the backend.
  */
-export const proxyCheckVideoOperationStatus = async (apiKey: string, operation: any): Promise<GenerateVideosOperation> => {
-    return apiPost<GenerateVideosOperation>('/api/check-video-status', { apiKey, operation });
+export const proxyCheckVideoOperationStatus = async (operation: any): Promise<GenerateVideosOperation> => {
+    return apiPost<GenerateVideosOperation>('/api/check-video-status', { operation });
 };
 
 /**
  * PROXY (Client-Side): Fetches the generated video via the backend.
  */
-export const proxyFetchVideoFromUri = async (apiKey: string, uri: string): Promise<Blob> => {
-    return apiPost<Blob>('/api/fetch-video', { apiKey, uri });
+export const proxyFetchVideoFromUri = async (uri: string): Promise<Blob> => {
+    return apiPost<Blob>('/api/fetch-video', { uri });
 };
 
 /**
  * PROXY (Client-Side): Requests image generation via the backend.
  */
-export const proxyGenerateImage = async (apiKey: string, prompt: string, aspectRatio: string): Promise<string> => {
-    const result = await apiPost<{ imageUrl: string }>('/api/generate-image', { apiKey, prompt, aspectRatio });
+export const proxyGenerateImage = async (prompt: string, aspectRatio: string): Promise<string> => {
+    const result = await apiPost<{ imageUrl: string }>('/api/generate-image', { prompt, aspectRatio });
     return result.imageUrl;
 };
 
 /**
  * PROXY (Client-Side): Requests image editing via the backend.
  */
-export const proxyEditImage = async (apiKey: string, prompt: string, image: { mimeType: string; data: string }): Promise<{ imageUrl: string | null; text: string }> => {
-    return apiPost<{ imageUrl: string | null; text: string }>('/api/edit-image', { apiKey, prompt, image });
-};
-
-/**
- * PROXY (Client-Side): Validates an API key via the backend.
- */
-export const proxyValidateApiKey = async (key: string): Promise<{ isValid: boolean; message?: string }> => {
-    if (!key.trim()) {
-        return { isValid: false };
-    }
-    return apiPost<{ isValid: boolean; message?: string }>('/api/validate-key', { key });
+export const proxyEditImage = async (prompt: string, image: { mimeType: string; data: string }): Promise<{ imageUrl: string | null; text: string }> => {
+    return apiPost<{ imageUrl: string | null; text: string }>('/api/edit-image', { prompt, image });
 };

@@ -1,75 +1,54 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { validateApiKey } from '../services/geminiService';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useApiKey } from '../contexts/ApiKeyContext';
+import { validateApiKey } from '../services/geminiService';
 
-type ValidationStatus = 'idle' | 'loading' | 'valid' | 'invalid';
-
-// Fix: Add ApiKeyManagerProps interface to accept an optional onSetApiKey prop, resolving the type error in ApiKeyModal.tsx.
 interface ApiKeyManagerProps {
-  onSetApiKey?: (key: string) => void;
+  onSetApiKey: (key: string) => void;
 }
 
 const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onSetApiKey }) => {
-  const [key, setKey] = useState('');
-  const [status, setStatus] = useState<ValidationStatus>('idle');
-  const [error, setError] = useState<string | null>(null);
-  const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { t } = useLanguage();
-  const { setApiKey: setApiKeyFromContext } = useApiKey();
-  // Fix: Use the onSetApiKey prop if provided, otherwise fall back to the context function.
-  const handleSetApiKey = onSetApiKey || setApiKeyFromContext;
+  const [keyInput, setKeyInput] = useState('');
+  const [validationStatus, setValidationStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (debounceTimeout.current) {
-      clearTimeout(debounceTimeout.current);
-    }
-
-    const trimmedKey = key.trim();
-    if (!trimmedKey) {
-      setStatus('idle');
+    if (!keyInput.trim()) {
+      setValidationStatus('idle');
       setError(null);
       return;
     }
 
-    setStatus('loading');
+    setValidationStatus('validating');
     setError(null);
 
-    debounceTimeout.current = setTimeout(async () => {
-      const result = await validateApiKey(trimmedKey);
-      
+    const debounceTimer = setTimeout(async () => {
+      // Basic length check to avoid unnecessary API calls for clearly invalid keys.
+      if (keyInput.length < 30) {
+        setValidationStatus('invalid');
+        setError(t.errors.invalidApiKey);
+        return;
+      }
+
+      const result = await validateApiKey(keyInput);
+
       if (result.isValid) {
-        setStatus('valid');
+        setValidationStatus('valid');
         setError(null);
-        setTimeout(() => {
-            handleSetApiKey(trimmedKey);
-        }, 500); // Brief pause to show success state
+        onSetApiKey(keyInput); // Automatically proceed on valid key
       } else {
-        setStatus('invalid');
-        const errorKey = result.message?.split('.')[1] as keyof typeof t['errors'];
-        const errorMessage = errorKey && t.errors[errorKey] ? t.errors[errorKey] : t.errors.invalidApiKeyDefault;
-        setError(errorMessage);
+        setValidationStatus('invalid');
+        const errorMessageKey = result.message as keyof typeof t.errors;
+        setError(errorMessageKey ? t.errors[errorMessageKey] : t.errors.invalidApiKeyDefault);
       }
-    }, 700); // Debounce validation by 700ms
+    }, 500); // 500ms debounce delay
 
-    return () => {
-      if (debounceTimeout.current) {
-        clearTimeout(debounceTimeout.current);
-      }
-    };
-  }, [key, handleSetApiKey, t]);
+    return () => clearTimeout(debounceTimer);
+  }, [keyInput, t, onSetApiKey]);
 
-  const borderColor = () => {
-    switch (status) {
-      case 'valid': return 'border-green-500';
-      case 'invalid': return 'border-red-500';
-      default: return 'border-gray-600';
-    }
-  };
-
-  const renderStatusIcon = () => {
-    switch (status) {
-      case 'loading':
+  const getStatusIndicator = () => {
+    switch (validationStatus) {
+      case 'validating':
         return (
           <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -78,16 +57,17 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onSetApiKey }) => {
         );
       case 'valid':
         return (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          <svg className="h-6 w-6 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         );
       case 'invalid':
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+         return (
+          <svg className="h-6 w-6 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         );
+      case 'idle':
       default:
         return null;
     }
@@ -99,23 +79,38 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onSetApiKey }) => {
       <p className="text-gray-400 mb-6">
         {t.apiKeyManager.description}
       </p>
-      <div className="relative max-w-lg mx-auto">
-        <input
-          type="password"
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          placeholder={t.apiKeyManager.placeholder}
-          className={`w-full bg-gray-700 border ${borderColor()} rounded-md p-3 pr-10 text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors`}
-          aria-label="Gemini API Key Input"
-          autoFocus
-        />
-        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-          {renderStatusIcon()}
+      
+      <div className="space-y-4">
+        <div className="relative">
+            <input
+              type="password"
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
+              placeholder={t.apiKeyManager.placeholder}
+              className="w-full bg-gray-700 border border-gray-600 rounded-md p-3 pr-10 text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              aria-label="API Key Input"
+              aria-invalid={validationStatus === 'invalid'}
+              aria-describedby="api-key-error"
+            />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                {getStatusIndicator()}
+            </div>
         </div>
       </div>
-      {status === 'invalid' && error && <p className="text-red-400 text-sm mt-2">{error}</p>}
-       <p className="text-xs text-gray-500 mt-4">
-        {t.apiKeyManager.getApiKeyText.part1} <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">Google AI Studio</a>{t.apiKeyManager.getApiKeyText.part2}
+
+      {error && <div id="api-key-error" className="mt-4 bg-red-900/50 border border-red-700 text-red-300 p-3 rounded-md">{error}</div>}
+
+      <p className="text-xs text-gray-500 mt-6">
+        {t.apiKeyManager.getApiKeyText.part1}
+        <a 
+          href="https://aistudio.google.com/app/apikey" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="text-indigo-400 hover:underline"
+        >
+          Google AI Studio
+        </a>
+        {t.apiKeyManager.getApiKeyText.part2}
       </p>
     </div>
   );
