@@ -1,7 +1,8 @@
 
+
 import React, { useState, useCallback } from 'react';
 import { editImage } from '../services/geminiService';
-import { fileToBase64 } from '../utils/fileUtils';
+import { blobToParts } from '../utils/fileUtils';
 import LoadingSpinner from './LoadingSpinner';
 
 const ImageEditor: React.FC = () => {
@@ -35,7 +36,7 @@ const ImageEditor: React.FC = () => {
         setResponseText('');
         
         try {
-            const imageBase64 = await fileToBase64(imageFile);
+            const imageBase64 = await blobToParts(imageFile);
             const result = await editImage(prompt, imageBase64);
             if(result.imageUrl) {
                 setEditedImageUrl(result.imageUrl);

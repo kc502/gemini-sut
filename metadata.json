@@ -1,5 +1,5 @@
 {
-  "name": "Video & Image Generator",
-  "description": "An advanced web application to generate and edit multimedia content using Google's Gemini API. It features video generation with the VEO model and image generation and editing with Imagen and Nano-Banana models respectively.",
+  "name": "Banana & Veo Gen",
+  "description": "An application to generate images and videos using Google's Gemini API, with a Burmese interface.",
   "requestFramePermissions": []
 }

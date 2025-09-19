@@ -1,6 +1,5 @@
-
 export enum Tab {
-  VIDEO_GENERATION = 'video-generation',
   IMAGE_GENERATION = 'image-generation',
+  VIDEO_GENERATION = 'video-generation',
   IMAGE_EDITING = 'image-editing',
 }

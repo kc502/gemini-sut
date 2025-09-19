@@ -1,8 +1,9 @@
 
-export const fileToBase64 = (file: File): Promise<{mimeType: string, data: string}> => {
+
+export const blobToParts = (blob: Blob): Promise<{mimeType: string, data: string}> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(blob);
     reader.onload = () => {
       const result = reader.result as string;
       const mimeType = result.split(',')[0].split(':')[1].split(';')[0];
