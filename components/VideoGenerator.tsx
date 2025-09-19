@@ -1,9 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { generateVideo, checkVideoOperationStatus, fetchVideoFromUri, type GenerateVideosOperation } from '../services/geminiService';
+import { generateVideo, checkVideoOperationStatus, fetchVideoFromUri } from '../services/geminiService';
+import { type GenerateVideosOperation } from '../types';
 import { blobToParts } from '../utils/fileUtils';
 import LoadingSpinner from './LoadingSpinner';
 import CustomDropdown from './CustomDropdown';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useApiKey } from '../contexts/ApiKeyContext';
 import { getFriendlyErrorMessage } from '../utils/errorUtils';
 
 const videoModels = [
@@ -16,6 +18,7 @@ const aspectRatios = ["16:9", "9:16"];
 
 const VideoGenerator: React.FC = () => {
     const { t } = useLanguage();
+    const { apiKey } = useApiKey();
     
     const [prompt, setPrompt] = useState('');
     const [negativePrompt, setNegativePrompt] = useState('');
@@ -72,6 +75,10 @@ const VideoGenerator: React.FC = () => {
         imageForGeneration?: { mimeType: string; data: string },
         videoForExtension?: { mimeType: string; data: string }
     ) => {
+        if (!apiKey) {
+            setError("API Key is missing.");
+            return;
+        }
         if (!prompt) {
             setError(t.common.errorPromptRequired);
             return;
@@ -84,11 +91,11 @@ const VideoGenerator: React.FC = () => {
         setLoadingMessage(t.videoGenerator.loadingMessages[0]);
 
         try {
-            let operation: GenerateVideosOperation = await generateVideo(prompt, model, aspectRatio, negativePrompt, imageForGeneration, videoForExtension);
+            let operation: GenerateVideosOperation = await generateVideo(apiKey, prompt, model, aspectRatio, negativePrompt, imageForGeneration, videoForExtension);
 
             while (!operation.done) {
                 await new Promise(resolve => setTimeout(resolve, 10000)); // Poll every 10 seconds
-                operation = await checkVideoOperationStatus(operation);
+                operation = await checkVideoOperationStatus(apiKey, operation);
             }
 
             if (operation.error) {
@@ -97,7 +104,7 @@ const VideoGenerator: React.FC = () => {
             
             if (operation.response?.generatedVideos?.[0]?.video?.uri) {
                 const videoUri = operation.response.generatedVideos[0].video.uri;
-                const videoBlob = await fetchVideoFromUri(videoUri);
+                const videoBlob = await fetchVideoFromUri(apiKey, videoUri);
                 setGeneratedVideoBlob(videoBlob);
                 setGeneratedVideoUrl(URL.createObjectURL(videoBlob));
             } else {
@@ -109,7 +116,7 @@ const VideoGenerator: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [prompt, model, aspectRatio, negativePrompt, t]);
+    }, [apiKey, prompt, model, aspectRatio, negativePrompt, t]);
 
     const handleSubmit = useCallback(async () => {
         const imageBase64 = imageFile ? await blobToParts(imageFile) : undefined;

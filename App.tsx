@@ -6,23 +6,13 @@ import ImageGenerator from './components/ImageGenerator';
 import ImageEditor from './components/ImageEditor';
 import TabButton from './components/TabButton';
 import ApiKeyManager from './components/ApiKeyManager';
-import { initializeGemini } from './services/geminiService';
 import { useLanguage } from './contexts/LanguageContext';
+import { useApiKey } from './contexts/ApiKeyContext';
 
 const App: React.FC = () => {
-  const [apiKey, setApiKey] = useState<string | null>(null);
+  const { apiKey } = useApiKey();
   const [activeTab, setActiveTab] = useState<Tab>(Tab.IMAGE_GENERATION);
   const { t } = useLanguage();
-
-  const handleSetApiKey = (key: string) => {
-    try {
-        initializeGemini(key);
-        setApiKey(key);
-    } catch (error) {
-        console.error("Failed to initialize Gemini service:", error);
-        // Here you could add UI feedback for initialization errors
-    }
-  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -68,7 +58,7 @@ const App: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <ApiKeyManager onSetApiKey={handleSetApiKey} />
+                <ApiKeyManager />
               )
             }
           </div>

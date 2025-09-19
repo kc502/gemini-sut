@@ -2,12 +2,14 @@ import React, { useState, useCallback, useRef } from 'react';
 import { generateImage } from '../services/geminiService';
 import LoadingSpinner from './LoadingSpinner';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useApiKey } from '../contexts/ApiKeyContext';
 import { getFriendlyErrorMessage } from '../utils/errorUtils';
 
 const aspectRatios = ["16:9", "9:16"];
 
 const ImageGenerator: React.FC = () => {
     const { t } = useLanguage();
+    const { apiKey } = useApiKey();
 
     const [prompt, setPrompt] = useState('');
     const [aspectRatio, setAspectRatio] = useState("16:9");
@@ -28,6 +30,10 @@ const ImageGenerator: React.FC = () => {
     }
 
     const handleSubmit = useCallback(async () => {
+        if (!apiKey) {
+            setError("API Key is missing."); // Should not happen if UI is correct
+            return;
+        }
         if (!prompt) {
             setError(t.common.errorPromptRequired);
             return;
@@ -38,7 +44,7 @@ const ImageGenerator: React.FC = () => {
         setGeneratedImageUrl(null);
 
         try {
-            const imageUrl = await generateImage(prompt, aspectRatio);
+            const imageUrl = await generateImage(apiKey, prompt, aspectRatio);
             setGeneratedImageUrl(imageUrl);
         } catch (err: any) {
             console.error(err);
@@ -46,7 +52,7 @@ const ImageGenerator: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [prompt, aspectRatio, t]);
+    }, [apiKey, prompt, aspectRatio, t]);
 
     const handleDownload = () => {
         if (!generatedImageUrl) return;

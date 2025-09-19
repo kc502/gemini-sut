@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { validateApiKey } from '../services/geminiService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useApiKey } from '../contexts/ApiKeyContext';
 
 type ValidationStatus = 'idle' | 'loading' | 'valid' | 'invalid';
 
+// Fix: Add ApiKeyManagerProps interface to accept an optional onSetApiKey prop, resolving the type error in ApiKeyModal.tsx.
 interface ApiKeyManagerProps {
-  onSetApiKey: (key: string) => void;
+  onSetApiKey?: (key: string) => void;
 }
 
 const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onSetApiKey }) => {
@@ -14,6 +16,9 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onSetApiKey }) => {
   const [error, setError] = useState<string | null>(null);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { t } = useLanguage();
+  const { setApiKey: setApiKeyFromContext } = useApiKey();
+  // Fix: Use the onSetApiKey prop if provided, otherwise fall back to the context function.
+  const handleSetApiKey = onSetApiKey || setApiKeyFromContext;
 
   useEffect(() => {
     if (debounceTimeout.current) {
@@ -37,12 +42,12 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onSetApiKey }) => {
         setStatus('valid');
         setError(null);
         setTimeout(() => {
-            onSetApiKey(trimmedKey);
+            handleSetApiKey(trimmedKey);
         }, 500); // Brief pause to show success state
       } else {
         setStatus('invalid');
-        // @ts-ignore
-        const errorMessage = result.message ? t.errors[result.message.split('.')[1]] : t.errors.invalidApiKeyDefault;
+        const errorKey = result.message?.split('.')[1] as keyof typeof t['errors'];
+        const errorMessage = errorKey && t.errors[errorKey] ? t.errors[errorKey] : t.errors.invalidApiKeyDefault;
         setError(errorMessage);
       }
     }, 700); // Debounce validation by 700ms
@@ -52,7 +57,7 @@ const ApiKeyManager: React.FC<ApiKeyManagerProps> = ({ onSetApiKey }) => {
         clearTimeout(debounceTimeout.current);
       }
     };
-  }, [key, onSetApiKey, t]);
+  }, [key, handleSetApiKey, t]);
 
   const borderColor = () => {
     switch (status) {

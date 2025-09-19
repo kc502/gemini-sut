@@ -3,10 +3,12 @@ import { editImage } from '../services/geminiService';
 import { blobToParts } from '../utils/fileUtils';
 import LoadingSpinner from './LoadingSpinner';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useApiKey } from '../contexts/ApiKeyContext';
 import { getFriendlyErrorMessage } from '../utils/errorUtils';
 
 const ImageEditor: React.FC = () => {
     const { t } = useLanguage();
+    const { apiKey } = useApiKey();
 
     const [prompt, setPrompt] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -27,6 +29,10 @@ const ImageEditor: React.FC = () => {
     };
 
     const handleSubmit = useCallback(async () => {
+        if (!apiKey) {
+            setError("API Key is missing.");
+            return;
+        }
         if (!prompt || !imageFile) {
             setError(t.imageEditor.errorPromptAndImageRequired);
             return;
@@ -39,7 +45,7 @@ const ImageEditor: React.FC = () => {
         
         try {
             const imageBase64 = await blobToParts(imageFile);
-            const result = await editImage(prompt, imageBase64);
+            const result = await editImage(apiKey, prompt, imageBase64);
             if(result.imageUrl) {
                 setEditedImageUrl(result.imageUrl);
             } else {
@@ -53,7 +59,7 @@ const ImageEditor: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [prompt, imageFile, t]);
+    }, [apiKey, prompt, imageFile, t]);
     
     const handleDownload = () => {
         if (!editedImageUrl) return;
